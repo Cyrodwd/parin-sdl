@@ -1,3 +1,4 @@
 # Parin-SDL (WIP)
 
-Parin + SDL. :/.
+Parin + SDL. :/
+Why? Because.
