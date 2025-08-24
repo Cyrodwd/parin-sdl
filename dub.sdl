@@ -1,0 +1,21 @@
+name "parin-sdl"
+description "Parin engine with SDL backend"
+authors "Cyrodwd"
+copyright "Copyright © 2025, Cyrodwd"
+license "MIT"
+
+# Dependencies ;)
+dependency "joka" version="~>0.0.33"
+dependency "dyaml" version="~>0.10.0"
+dependency "bindbc-sdl" version="~>1.5.2"
+targetName "xparin"
+
+# Configurations
+
+configuration "linking-static" {
+    targetType "staticLibrary"
+    subConfiguration "bindbc-sdl" "static"
+}
+
+libs "SDL2"
+dflags "-i"
