@@ -274,8 +274,6 @@ float GetDeltaTime()
 
 byte InitGame(bool function() startFunc)
 {
-    assert(startFunc !is null, "Start functions needs to be a valid function pointer");
-
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
         printfln("An error has ocurred initializing SDL: {}", SDL_GetError());
