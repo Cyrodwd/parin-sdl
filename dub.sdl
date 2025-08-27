@@ -8,6 +8,8 @@ license "MIT"
 dependency "joka" version="~>0.0.33"
 dependency "dyaml" version="~>0.10.0"
 dependency "bindbc-sdl" version="~>1.5.2"
+libs "SDL2" "SDL2_image"
+
 targetName "xparin"
 
 # Configurations
@@ -15,7 +17,19 @@ targetName "xparin"
 configuration "linking-static" {
     targetType "staticLibrary"
     subConfiguration "bindbc-sdl" "static"
+    versions "SDL_2_30" "SDL_Image_2_8"
 }
 
-libs "SDL2"
-dflags "-i"
+configuration "target-desktop" {
+    versions "Desktop"
+}
+
+configuration "target-android" {
+    // versions "Android"
+    dflags "-mtriple=aarch64--android-linux"
+
+    subConfiguration "bindbc-sdl" "dynamic"
+
+    targetType "dynamicLibrary"
+}
+

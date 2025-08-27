@@ -97,7 +97,7 @@ bool _UpdateWindow(bool function() updateFunction, void function() renderFunctio
     while(SDL_PollEvent(&gEngineState.event))
         _PollEngineEvents();
 
-    _UpdateKeyboard();
+    version (Desktop) _UpdateKeyboard();
 
     // Update delta time
     gEngineState.lastTick = gEngineState.currentTick;
@@ -136,6 +136,66 @@ void _CloseWindow() {
 
 /// Do not call this manually .. unless you want to use your OWN main function
 public:
+
+/* Texture */
+
+struct Texture
+{
+    uint width, height;
+    private SDL_Texture* data = null;
+
+    bool isEmpty()
+    {
+        return (data is null);
+    }
+
+    /// Returns the size of the texture
+    Vec2 size()
+    {
+        return Vec2(width, height);
+    }
+
+    void free()
+    {
+        if (!isEmpty())
+        {
+            SDL_DestroyTexture(data);
+            data = null;
+
+            this = Texture();
+        }
+    }
+}
+
+/// Load a texture
+Texture loadTexture(IStr path)
+{
+    SDL_Surface* surface = IMG_Load(path.toCStr().getOr());
+    
+    if (!surface)
+    {
+        printfln("Error loading texture: {}", SDL_GetError());
+        return Texture();
+    }
+
+    uint w = surface.w;
+    uint h = surface.h;
+
+    auto texture = SDL_CreateTextureFromSurface(gEngineState.renderer, surface);
+    SDL_FreeSurface(surface);
+    
+    return Texture(w, h, texture);
+}
+
+void drawTexture(Texture texture, GRect!int area, GVec2!float position)
+{
+    if (texture.data !is null)
+    {
+        const SDL_Rect sArea = SDL_Rect(area.position.x, area.position.y, area.size.x, area.size.y);
+        const SDL_FRect target = SDL_FRect(position.x, position.y, texture.width, texture.height);
+        SDL_RenderCopyF(gEngineState.renderer, texture.data, &sArea, &target);
+    }
+}
 
 /* Keyboard */
 
@@ -280,6 +340,12 @@ byte InitGame(bool function() startFunc)
         return -1;
     }
 
+    if (IMG_Init(IMG_INIT_PNG) < 0)
+    {
+        printfln("An error has ocurred initializing SDL_image: {}", SDL_GetError());
+        return -1;
+    }
+
     if (!_OpenWindow(800, 600, "RunGame"))
     {
         printfln("An error has ocurred creating the window and renderer: {}", SDL_GetError());
@@ -313,19 +379,38 @@ void QuitGame(void function() quitFunction)
     gEngineState.lastKeyboardState = null;
 
     _CloseWindow();
+    IMG_Quit();
     SDL_Quit();
 }
 
 /// Initializes, updates and finish the game
 mixin template RunGame(alias startFunc, alias updateFunc, alias renderFunc, alias quitFunc)
 {
-    // Desktop main
-    int main()
+    // Android main
+    version(Android)
     {
-        if (InitGame(&startFunc) < 0) return 1;
-        scope (exit) QuitGame(&quitFunc);
+        int SDL_main()
+        {
+            import core.runtime : rt_init;
+            rt_init(); // This is necessary
 
-        UpdateGame(&updateFunc, &renderFunc);
-        return 0;
+            if (InitGame(&startFunc) < 0) return 1;
+            scope (exit) QuitGame(&quitFunc);
+
+            UpdateGame(&updateFunc, &renderFunc);       
+            return 0;
+        }
+    }
+    else
+    {
+        // Desktop main
+        int main()
+        {
+            if (InitGame(&startFunc) < 0) return 1;
+            scope (exit) QuitGame(&quitFunc);
+
+            UpdateGame(&updateFunc, &renderFunc);
+            return 0;
+        }
     }
 }
